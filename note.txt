@@ -1,1 +1,7 @@
-cross-env, nodemon, concurrently, rimraf
+cross-env, nodemon, concurrently, rimraf, axios,npm install @types/node --save-dev
+
+{
+    "compilerOptions": {
+        "types": ["node"]
+    }
+}
