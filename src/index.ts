@@ -1,5 +1,7 @@
 import {AxiosResponse} from "axios";
 import * as https from "https";
+import {RowData, SheetData, SwaggerData} from "./model/app-model";
+import listService from './data/service.json';
 
 const axiosRq = require('axios');
 const axios = axiosRq.create({ // by pass ssl err
@@ -8,15 +10,47 @@ const axios = axiosRq.create({ // by pass ssl err
     })
 });
 
-const apiEndpoint = 'https://kong-dev.apps.ocp-eco02.dev.sunteco.local/sun-monitor/api/v2/api-docs';
 
-axios
-    .get(apiEndpoint)
-    .then((res: AxiosResponse<any>) => {
-        console.log('--- SUCCESS ---');
-        console.log(res.data);
-    })
-    .catch((error: any) => {
-        console.log('--- ERROR ---')
-        console.error(error);
-    });
+function getData() {
+    let result: SheetData[] = [];
+    const listReq = [];
+    for (const service of listService) {
+        const req = axios?.get(service.url);
+        listReq.push(req);
+    }
+    axiosRq.all(listReq).then(axiosRq.spread((...resp: AxiosResponse<SwaggerData>[]) => {
+        for (let i = 0; i < listService.length; i++) {
+            const response = resp[i];
+            const sheetData = {
+                name: listService[i].name,
+                data: extractDataFromPaths(response.data.paths, listService[i].name)
+            };
+            result.push(sheetData);
+        }
+        console.log('--- DONE ---');
+        console.log(JSON.stringify(result));
+    }));
+}
+
+function extractDataFromPaths(paths: any, serviceName: string): Array<RowData> {
+    const result = [];
+    for (const url in paths) {
+        const methodData = paths[url];
+        for (const method in methodData) {
+            const x = methodData[method];
+            const output: RowData = {
+                service: serviceName,
+                controller: x.tags.length > 0 ? x.tags[0] : '',
+                method: method,
+                url: url,
+                summary: x.summary,
+                description: x.description
+            };
+            result.push(output);
+        }
+    }
+    return result;
+}
+
+
+getData();

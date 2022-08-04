@@ -1,0 +1,10 @@
+[
+  {
+    "name": "sun-monitor",
+    "url": "https://kong-dev.apps.ocp-eco02.dev.sunteco.local/sun-monitor/api/v2/api-docs"
+  },
+  {
+    "name": "sun-id",
+    "url": "https://kong-dev.apps.ocp-eco02.dev.sunteco.local/sun-id/api/v2/api-docs"
+  }
+]
