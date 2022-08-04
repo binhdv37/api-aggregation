@@ -3,7 +3,7 @@ import * as https from "https";
 import {RowData, SheetData, SwaggerData} from "./model/app-model";
 import listService from './data/service.json';
 
-const xlsx = require('xlsx')
+const xlsx = require('xlsx');
 const axiosRq = require('axios');
 const axios = axiosRq.create({ // by pass ssl err
     httpsAgent: new https.Agent({
@@ -12,9 +12,25 @@ const axios = axiosRq.create({ // by pass ssl err
 });
 
 const outputFilePath = '/home/binhdv/Desktop/out.xlsx';
+const inputFilePath = '/home/binhdv/Desktop/in.xlsx';
 
+function readExcelData() {
+    const result: SheetData[] = [];
+    const file = xlsx.readFile(inputFilePath);
+    const sheets = file.sheetNames;
+    for(let i = 0; i < sheets.length; i++) {
+        const rowsData: RowData[] = [];
+        const temp = xlsx.utils.sheet_to_json(file.Sheets[sheets[i]]);
+        temp.forEach((res: RowData) => {
+            rowsData.push(res)
+        });
+        result.push({name: sheets[i], data: rowsData});
+    }
+    console.log('--------------');
+    console.log(result);
+}
 
-function getData() {
+function getSwaggerDataToExcel() {
     let result: SheetData[] = [];
     const listReq = [];
     for (const service of listService) {
@@ -66,4 +82,5 @@ function writeDataToExcel(listSheetData: SheetData[]) {
 }
 
 
-getData();
+// getSwaggerDataToExcel();
+readExcelData();
