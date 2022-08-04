@@ -3,12 +3,15 @@ import * as https from "https";
 import {RowData, SheetData, SwaggerData} from "./model/app-model";
 import listService from './data/service.json';
 
+const xlsx = require('xlsx')
 const axiosRq = require('axios');
 const axios = axiosRq.create({ // by pass ssl err
     httpsAgent: new https.Agent({
         rejectUnauthorized: false
     })
 });
+
+const outputFilePath = '/home/binhdv/Desktop/out.xlsx';
 
 
 function getData() {
@@ -29,6 +32,7 @@ function getData() {
         }
         console.log('--- DONE ---');
         console.log(JSON.stringify(result));
+        writeDataToExcel(result);
     }));
 }
 
@@ -50,6 +54,15 @@ function extractDataFromPaths(paths: any, serviceName: string): Array<RowData> {
         }
     }
     return result;
+}
+
+function writeDataToExcel(listSheetData: SheetData[]) {
+    let workBook = xlsx.utils.book_new();
+    for (const sheet of listSheetData) {
+        const workSheet = xlsx.utils.json_to_sheet(sheet.data);
+        xlsx.utils.book_append_sheet(workBook, workSheet, sheet.name);
+    }
+    xlsx.writeFile(workBook, outputFilePath);
 }
 
 
