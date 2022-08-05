@@ -12,7 +12,6 @@ export interface ControllerInfo {
 }
 
 export interface RowData {
-    service?: string;
     controller?: string;
     method?: string;
     url?: string;
