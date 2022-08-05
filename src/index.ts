@@ -18,7 +18,7 @@ const finalFilePath = '/home/binhdv/Desktop/final.xlsx';
 function readExcelData(filePath: string): Array<SheetData> {
     const result: SheetData[] = [];
     const file = xlsx.readFile(filePath);
-    const sheets = file.sheetNames;
+    const sheets = file.SheetNames;
     for(let i = 0; i < sheets.length; i++) {
         const rowsData: RowData[] = [];
         const temp = xlsx.utils.sheet_to_json(file.Sheets[sheets[i]]);
@@ -140,7 +140,7 @@ function finalAction() {
         }
         const final: Array<SheetData> = mergeExcelData(oldSheetData, newSheetData);
         console.log('----------final------------');
-        console.log(final);
+        console.log(JSON.stringify(final));
     }));
 }
 
