@@ -11,9 +11,9 @@ const axios = axiosRq.create({ // by pass ssl err
     })
 });
 
-const outputFilePath = '/home/binhdv/Desktop/out.xlsx';
-const inputFilePath = '/home/binhdv/Desktop/in.xlsx';
-const finalFilePath = '/home/binhdv/Desktop/final.xlsx';
+const outputFilePath = '/home/binh/Desktop/out.xlsx';
+const inputFilePath = '/home/binh/Desktop/in.xlsx';
+const finalFilePath = '/home/binh/Desktop/final.xlsx';
 
 function readExcelData(filePath: string): Array<SheetData> {
     const result: SheetData[] = [];
@@ -50,7 +50,7 @@ function getSwaggerDataToExcel() {
         }
         console.log('--- DONE ---');
         console.log(JSON.stringify(result));
-        writeDataToExcel(result);
+        writeDataToExcel(result, outputFilePath);
     }));
 }
 
@@ -73,13 +73,13 @@ function extractRowDataFromPaths(paths: any): Array<RowData> {
     return result;
 }
 
-function writeDataToExcel(listSheetData: SheetData[]) {
+function writeDataToExcel(listSheetData: SheetData[], outPath: string) {
     let workBook = xlsx.utils.book_new();
     for (const sheet of listSheetData) {
         const workSheet = xlsx.utils.json_to_sheet(sheet.data);
         xlsx.utils.book_append_sheet(workBook, workSheet, sheet.name);
     }
-    xlsx.writeFile(workBook, outputFilePath);
+    xlsx.writeFile(workBook, outPath);
 }
 
 function mergeExcelData(oldData: Array<SheetData>, newData: Array<SheetData>): Array<SheetData> {
