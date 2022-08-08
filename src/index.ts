@@ -85,12 +85,17 @@ function writeDataToExcel(listSheetData: SheetData[], outPath: string) {
     let workBook = xlsx.utils.book_new();
     for (const sheet of listSheetData) {
         const workSheet = xlsx.utils.json_to_sheet(sheet.data);
+        const col1MaxWitdh = sheet.data?.reduce((w, r) => Math.max(w, r.controller ? r.controller.length : 0), 10);
+        const col2MaxWitdh = sheet.data?.reduce((w, r) => Math.max(w, r.method ? r.method.length : 0), 10);
+        const col3MaxWitdh = sheet.data?.reduce((w, r) => Math.max(w, r.url ? r.url.length : 0), 10);
+        const col4MaxWitdh = sheet.data?.reduce((w, r) => Math.max(w, r.summary ? r.summary.length : 0), 10);
+        const col5MaxWitdh = sheet.data?.reduce((w, r) => Math.max(w, r.description ? r.description.length : 0), 10);
         workSheet['!cols']= [
-            {wch: 20},
-            {wch: 15},
-            {wch: 35},
-            {wch: 30},
-            {wch: 20}
+            {wch: col1MaxWitdh},
+            {wch: col2MaxWitdh},
+            {wch: col3MaxWitdh},
+            {wch: col4MaxWitdh},
+            {wch: col5MaxWitdh}
         ];
         xlsx.utils.book_append_sheet(workBook, workSheet, sheet.name);
     }
