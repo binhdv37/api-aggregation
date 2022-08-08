@@ -85,6 +85,13 @@ function writeDataToExcel(listSheetData: SheetData[], outPath: string) {
     let workBook = xlsx.utils.book_new();
     for (const sheet of listSheetData) {
         const workSheet = xlsx.utils.json_to_sheet(sheet.data);
+        workSheet['!cols']= [
+            {wch: 20},
+            {wch: 15},
+            {wch: 35},
+            {wch: 30},
+            {wch: 20}
+        ];
         xlsx.utils.book_append_sheet(workBook, workSheet, sheet.name);
     }
     xlsx.writeFile(workBook, outPath);
