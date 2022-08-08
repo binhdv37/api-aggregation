@@ -23,3 +23,8 @@ export interface SheetData {
     name?: string; // sheet name - service name
     data?: Array<RowData>;
 }
+
+export interface FileInfo {
+    name: string;
+    time: number; // time that get from day month year
+}

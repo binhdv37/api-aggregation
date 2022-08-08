@@ -1,8 +1,9 @@
 import {AxiosResponse} from "axios";
 import * as https from "https";
-import {RowData, SheetData, SwaggerData} from "./model/app-model";
+import {FileInfo, RowData, SheetData, SwaggerData} from "./model/app-model";
 import listService from './data/service.json';
 
+const fs = require('fs');
 const xlsx = require('xlsx');
 const axiosRq = require('axios');
 const axios = axiosRq.create({ // by pass ssl err
@@ -11,9 +12,10 @@ const axios = axiosRq.create({ // by pass ssl err
     })
 });
 
-const outputFilePath = '/home/binh/Desktop/out.xlsx';
-const inputFilePath = '/home/binh/Desktop/in.xlsx';
-const finalFilePath = '/home/binh/Desktop/final.xlsx';
+// const fileNameRegex = new RegExp('^API-SUMMARY-[0-9]{2}_[0-9]{2}_[0-9]{4}\.xlsx$', 'gi');
+const fileNameRegex = /^API-SUMMARY-[0-9]{2}_[0-9]{2}_[0-9]{4}.xlsx$/g;
+
+const dirname = '/home/binhdv/code/data';
 
 function readExcelData(filePath: string): Array<SheetData> {
     const result: SheetData[] = [];
@@ -27,12 +29,10 @@ function readExcelData(filePath: string): Array<SheetData> {
         });
         result.push({name: sheets[i], data: rowsData});
     }
-    // console.log('--------------');
-    // console.log(result);
     return result;
 }
 
-function getSwaggerDataToExcel() {
+function getSwaggerDataToExcel(outPath: string) {
     let result: SheetData[] = [];
     const listReq = [];
     for (const service of listService) {
@@ -48,9 +48,8 @@ function getSwaggerDataToExcel() {
             };
             result.push(sheetData);
         }
-        console.log('--- DONE ---');
-        console.log(JSON.stringify(result));
-        writeDataToExcel(result, outputFilePath);
+        writeDataToExcel(result, outPath);
+        console.log('--- Export swagger to excel done! ---');
     }));
 }
 
@@ -80,6 +79,7 @@ function writeDataToExcel(listSheetData: SheetData[], outPath: string) {
         xlsx.utils.book_append_sheet(workBook, workSheet, sheet.name);
     }
     xlsx.writeFile(workBook, outPath);
+    console.log('--- Write data to excel done! ---');
 }
 
 function mergeExcelData(oldData: Array<SheetData>, newData: Array<SheetData>): Array<SheetData> {
@@ -115,35 +115,90 @@ function mergeSheetData(oldData: Array<RowData>, newData: Array<RowData>): Array
     return result;
 }
 
-function finalAction() {
-    /*
-        - read from api => newSheetData
-        - read from excel => oldSheetData
-        - merge => write to excel
-     */
-    const oldSheetData: SheetData[] = readExcelData(inputFilePath);
-
-    let newSheetData: SheetData[] = [];
-    const listReq = [];
-    for (const service of listService) {
-        const req = axios?.get(service.url);
-        listReq.push(req);
+// find all files in folder that match regex
+function findLatestFilePath(dirname: string): string | null {
+    const matchFiles: FileInfo[] = findMatchFilesName(dirname);
+    if (matchFiles.length === 0) {
+        return null;
     }
-    axiosRq.all(listReq).then(axiosRq.spread((...resp: AxiosResponse<SwaggerData>[]) => {
-        for (let i = 0; i < listService.length; i++) {
-            const response = resp[i];
-            const sheetData = {
-                name: listService[i].name,
-                data: extractRowDataFromPaths(response.data.paths)
-            };
-            newSheetData.push(sheetData);
+    let latest = matchFiles[0];
+    for (const f of matchFiles) {
+        if (f.time > latest.time) {
+            latest = f;
         }
-        const final: Array<SheetData> = mergeExcelData(oldSheetData, newSheetData);
-        console.log('----------final------------');
-        console.log(JSON.stringify(final));
-    }));
+    }
+    return `${dirname}/${latest.name}`;
 }
 
-// getSwaggerDataToExcel();
-// readExcelData();
+function findMatchFilesName(dirname: string): FileInfo[] {
+    const result: FileInfo[] = [];
+    let filenames: string[] = [];
+    filenames = fs.readdirSync(dirname);
+    filenames = filenames.filter(x => fileNameRegex.test(x));
+    for (const f of filenames) {
+        const dmyStr = f.substring(12, 22);
+        const d = dmyStr.substring(0, 2);
+        const m = dmyStr.substring(3, 5);
+        const y = dmyStr.substring(6, 10);
+        const date = new Date(Number(y), Number(m) - 1, Number(d));
+        const fileInfo: FileInfo = {
+            name: f,
+            time: date.getTime()
+        };
+        result.push(fileInfo);
+    }
+    return result;
+}
+
+function genFilePath(dirname: string, day: string, month: string, year: string): string {
+    return `${dirname}/API-SUMMARY-${day}_${month}_${year}.xlsx`;
+}
+
+function numberToStringTwoDigits(x: number): string {
+    if (x < 10) {
+        return '0' + x;
+    }
+    return x + '';
+}
+
+function finalAction() {
+    console.log('--- Working on it ---');
+    /*
+        - get latest file
+        - null
+           + true: read swagger => to excel
+           + false: read excel to object, read swagger to object, merge, to excel
+     */
+    const date = new Date();
+    const day = numberToStringTwoDigits(date.getDate());
+    const month = numberToStringTwoDigits(date.getMonth() + 1);
+    const year = numberToStringTwoDigits(date.getFullYear());
+    const outputFilePath = genFilePath(dirname, day, month, year);
+
+    const latestFilePath = findLatestFilePath(dirname);
+    if (latestFilePath === null) {
+        getSwaggerDataToExcel(outputFilePath);
+    } else {
+        const latestFileSheetData: SheetData[] = readExcelData(latestFilePath);
+        let newSheetData: SheetData[] = [];
+        const listReq = [];
+        for (const service of listService) {
+            const req = axios?.get(service.url);
+            listReq.push(req);
+        }
+        axiosRq.all(listReq).then(axiosRq.spread((...resp: AxiosResponse<SwaggerData>[]) => {
+            for (let i = 0; i < listService.length; i++) {
+                const response = resp[i];
+                const sheetData = {
+                    name: listService[i].name,
+                    data: extractRowDataFromPaths(response.data.paths)
+                };
+                newSheetData.push(sheetData);
+            }
+            const final: Array<SheetData> = mergeExcelData(latestFileSheetData, newSheetData);
+            writeDataToExcel(final, outputFilePath);
+        }));
+    }
+}
+
 finalAction();
