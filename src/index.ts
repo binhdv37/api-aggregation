@@ -44,13 +44,22 @@ function getSwaggerDataToExcel(outPath: string) {
             const response = resp[i];
             const sheetData = {
                 name: listService[i].name,
-                data: extractRowDataFromPaths(response.data.paths)
+                data: sortRowData(extractRowDataFromPaths(response.data.paths))
             };
             result.push(sheetData);
         }
         writeDataToExcel(result, outPath);
         console.log('--- Export swagger to excel done! ---');
     }));
+}
+
+function sortRowData(rowDatas: RowData[]): RowData[] {
+    return rowDatas.sort((a, b) => {
+        if (a.url === undefined || b.url === undefined) {
+            return 1;
+        }
+        return a.url > b.url ? 1 : -1;
+    });
 }
 
 function extractRowDataFromPaths(paths: any): Array<RowData> {
@@ -63,8 +72,8 @@ function extractRowDataFromPaths(paths: any): Array<RowData> {
                 controller: x.tags.length > 0 ? x.tags[0] : '',
                 method: method,
                 url: url,
-                summary: x.summary,
-                description: x.description
+                summary: x.summary ? x.summary : '',
+                description: x.description ? x.description : ''
             };
             result.push(output);
         }
@@ -191,7 +200,7 @@ function finalAction() {
                 const response = resp[i];
                 const sheetData = {
                     name: listService[i].name,
-                    data: extractRowDataFromPaths(response.data.paths)
+                    data: sortRowData(extractRowDataFromPaths(response.data.paths))
                 };
                 newSheetData.push(sheetData);
             }
